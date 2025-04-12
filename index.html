@@ -89,14 +89,19 @@
       variables: { search: query }
     };
 
-    const res = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(graphqlQuery)
-    });
+    try {
+      const res = await fetch("https://graphql.anilist.co", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(graphqlQuery)
+      });
 
-    const data = await res.json();
-    displayResults(data.data.Page.media);
+      const data = await res.json();
+      displayResults(data.data.Page.media);
+    } catch (error) {
+      alert("Error fetching anime data.");
+      console.error(error);
+    }
   }
 
   function displayResults(animeList) {
@@ -128,6 +133,10 @@
         }
       });
 
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
       const listDiv = document.getElementById("episodeList");
       listDiv.innerHTML = `<h2>Episodes:</h2>`;
@@ -154,6 +163,10 @@
           "x-rapidapi-host": "hianime.p.rapidapi.com"
         }
       });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
       const data = await res.json();
       const video = document.getElementById("videoPlayer");

@@ -3,119 +3,123 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Anime Streaming</title>
+  <title>Anime Streaming Site</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #0f0f0f;
+      background: #121212;
       color: #fff;
       margin: 0;
       padding: 20px;
     }
+    h1 {
+      color: #f06595;
+    }
     input, button {
       padding: 10px;
       margin: 5px;
+      border-radius: 5px;
       border: none;
-      border-radius: 4px;
     }
     button {
-      background: #1db954;
+      background-color: #f06595;
       color: white;
       cursor: pointer;
     }
     .anime-card {
-      background: #1c1c1c;
+      background: #1e1e1e;
+      border-radius: 10px;
       padding: 15px;
-      margin-top: 20px;
-      border-radius: 8px;
+      margin: 15px 0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
     .anime-card img {
-      height: 200px;
-    }
-    .episode-list {
-      margin-top: 10px;
+      max-height: 250px;
+      border-radius: 10px;
     }
     .episode {
+      background: #2c2c2c;
       display: inline-block;
-      background: #333;
-      color: #fff;
       margin: 5px;
       padding: 8px 12px;
       border-radius: 5px;
       cursor: pointer;
+      transition: 0.2s;
     }
     .episode:hover {
-      background: #555;
+      background: #f06595;
     }
     video {
-      width: 100%;
-      max-width: 720px;
-      height: 400px;
       margin-top: 20px;
-      border: 2px solid #444;
+      width: 100%;
+      max-width: 800px;
+      border: 2px solid #f06595;
       border-radius: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h1>🎥 Anime Streaming</h1>
-  <input id="searchInput" type="text" placeholder="Search anime title...">
-  <button onclick="searchAnime()">Search</button>
+<h1>🎬 Anime Streaming Site</h1>
+<input id="searchInput" type="text" placeholder="Search anime...">
+<button onclick="searchAnime()">Search</button>
 
-  <div id="animeResults"></div>
-  <div id="episodeList"></div>
-  <video id="videoPlayer" controls autoplay></video>
+<div id="animeResults"></div>
+<div id="episodeList"></div>
+<video id="videoPlayer" controls autoplay></video>
 
-  <script>
-    const rapidApiKey = "3b43b081e2msh1d10442a715ee62p11df06jsn9ab360b9432f";
+<script>
+  const rapidApiKey = "3b43b081e2msh1d10442a715ee62p11df06jsn9ab360b9432f"; // Replace this with your actual RapidAPI key
 
-    async function searchAnime() {
-      const query = document.getElementById("searchInput").value;
-      const graphqlQuery = {
-        query: `
-          query ($search: String) {
-            Page(perPage: 5) {
-              media(search: $search, type: ANIME) {
-                id
-                title { romaji }
-                description
-                coverImage { large }
-              }
+  async function searchAnime() {
+    const query = document.getElementById("searchInput").value;
+    const graphqlQuery = {
+      query: `
+        query ($search: String) {
+          Page(perPage: 5) {
+            media(search: $search, type: ANIME) {
+              id
+              title { romaji }
+              description
+              coverImage { large }
             }
           }
-        `,
-        variables: { search: query }
-      };
+        }
+      `,
+      variables: { search: query }
+    };
 
-      const res = await fetch("https://graphql.anilist.co", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(graphqlQuery)
-      });
+    const res = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(graphqlQuery)
+    });
 
-      const data = await res.json();
-      displayResults(data.data.Page.media);
-    }
+    const data = await res.json();
+    displayResults(data.data.Page.media);
+  }
 
-    function displayResults(animeList) {
-      const resultsDiv = document.getElementById("animeResults");
-      resultsDiv.innerHTML = "";
-      document.getElementById("episodeList").innerHTML = "";
-      animeList.forEach(anime => {
-        const slug = anime.title.romaji.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const div = document.createElement("div");
-        div.className = "anime-card";
-        div.innerHTML = `
-          <h2>${anime.title.romaji}</h2>
-          <img src="${anime.coverImage.large}"><br/>
-          <button onclick="fetchEpisodes('${slug}')">▶ Watch</button>
-        `;
-        resultsDiv.appendChild(div);
-      });
-    }
+  function displayResults(animeList) {
+    const resultsDiv = document.getElementById("animeResults");
+    resultsDiv.innerHTML = "";
+    animeList.forEach(anime => {
+      const slug = anime.title.romaji.toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/^-|-$/g, "");
+      const div = document.createElement("div");
+      div.className = "anime-card";
+      div.innerHTML = `
+        <h2>${anime.title.romaji}</h2>
+        <img src="${anime.coverImage.large}" alt="${anime.title.romaji}">
+        <p>${anime.description ? anime.description.replace(/<[^>]*>?/gm, '').slice(0, 200) + "..." : ""}</p>
+        <button onclick="fetchEpisodes('${slug}')">📺 Watch</button>
+      `;
+      resultsDiv.appendChild(div);
+    });
+  }
 
-    async function fetchEpisodes(animeId) {
+  async function fetchEpisodes(animeId) {
+    try {
       const res = await fetch(`https://hianime.p.rapidapi.com/anime/episodes/${animeId}`, {
         method: "GET",
         headers: {
@@ -126,17 +130,22 @@
 
       const data = await res.json();
       const listDiv = document.getElementById("episodeList");
-      listDiv.innerHTML = "<h3>📺 Episodes:</h3>";
+      listDiv.innerHTML = `<h2>Episodes:</h2>`;
       data.episodes.forEach(ep => {
-        const epBtn = document.createElement("span");
-        epBtn.className = "episode";
-        epBtn.innerText = `Episode ${ep.number}`;
-        epBtn.onclick = () => playEpisode(ep.id);
-        listDiv.appendChild(epBtn);
+        const span = document.createElement("span");
+        span.className = "episode";
+        span.innerText = `Ep ${ep.number}`;
+        span.onclick = () => fetchVideo(ep.id);
+        listDiv.appendChild(span);
       });
+    } catch (err) {
+      alert("Failed to load episodes. Check your anime ID or API quota.");
+      console.error(err);
     }
+  }
 
-    async function playEpisode(episodeId) {
+  async function fetchVideo(episodeId) {
+    try {
       const url = `https://hianime.p.rapidapi.com/anime/episode-srcs?id=${episodeId}&server=vidstreaming&category=sub`;
       const res = await fetch(url, {
         method: "GET",
@@ -148,15 +157,21 @@
 
       const data = await res.json();
       const video = document.getElementById("videoPlayer");
-      const src = data.sources?.[0]?.url;
-      if (src) {
-        video.src = src;
+      const source = data.sources?.[0]?.url;
+
+      if (source) {
+        video.src = source;
         video.load();
         video.play();
       } else {
-        alert("Video not available for this episode.");
+        alert("Stream not available for this episode.");
       }
+    } catch (err) {
+      alert("Error loading video.");
+      console.error(err);
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>
